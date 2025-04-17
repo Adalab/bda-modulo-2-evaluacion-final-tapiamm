@@ -79,15 +79,6 @@ customer.first_name,
 customer.last_name;
 
 -- 11. 
--- revisar
-SELECT
-category.name,
-COUNT(film_category.film_id) AS total_films
-FROM category
-LEFT JOIN film_category -- aunque la categoria no tenga peliculas quiero verlo
-ON category.category_id = film_category.category_id
-GROUP BY category.name;
-
 SELECT
 category.name,
 COUNT(rental_id) AS total_rentals
