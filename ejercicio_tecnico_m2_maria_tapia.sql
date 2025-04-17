@@ -1,7 +1,7 @@
 USE sakila;
 
 -- 1. 
-SELECT
+SELECT DISTINCT
 title
 FROM
 film;
@@ -79,6 +79,7 @@ customer.first_name,
 customer.last_name;
 
 -- 11. 
+-- revisar
 SELECT
 category.name,
 COUNT(film_category.film_id) AS total_films
@@ -86,6 +87,16 @@ FROM category
 LEFT JOIN film_category -- aunque la categoria no tenga peliculas quiero verlo
 ON category.category_id = film_category.category_id
 GROUP BY category.name;
+
+SELECT
+category.name,
+COUNT(rental_id) AS total_rentals
+FROM category
+INNER JOIN film_category ON category.category_id = film_category.category_id
+INNER JOIN inventory ON film_category.film_id = inventory.film_id
+INNER JOIN rental ON inventory.inventory_id = rental.inventory_id
+GROUP BY category.name;
+
 
 -- 12.
 SELECT
@@ -95,16 +106,7 @@ FROM
 film
 GROUP BY rating;
 
--- 13. elijo una 
-SELECT
-first_name,
-last_name
-FROM actor 
-INNER JOIN film_actor ON actor.actor_id = film_actor.actor_id
-INNER JOIN film ON film_actor.film_id = film.film_id
-WHERE film.title = 'Indian Love'
-ORDER BY last_name;
-
+-- 13.
 SELECT
 actor.first_name,
 actor.last_name
@@ -138,13 +140,8 @@ SELECT
 film.title
 FROM film
 INNER JOIN film_category ON film.film_id = film_category.film_id
-WHERE film_category.film_id IN (
-	SELECT
-	film_category.film_id
-	FROM film_category
-	INNER JOIN category
-	ON film_category.category_id = category.category_id
-	WHERE category.name = 'Family');
+INNER JOIN category ON film_category.category_id = category.category_id
+WHERE name = 'Family';
 
 -- 17.
 SELECT
@@ -157,16 +154,14 @@ WHERE rating = 'R' AND length > 120;
 
 -- 18. 
 SELECT
-first_name,
-last_name
+actor.first_name,
+actor.last_name
 FROM actor
-WHERE actor_id IN (
-	SELECT
-    COUNT(film_id) AS total_film
-    FROM film_actor
-    GROUP BY actor_id
-    HAVING total_film > 10)
-ORDER BY last_name;
+INNER JOIN film_actor
+ON actor.actor_id = film_actor.actor_id
+GROUP BY actor.actor_id, actor.first_name, actor.last_name
+HAVING COUNT(film_actor.actor_id) > 10
+ORDER BY actor.last_name;
 
 -- 19.
 SELECT DISTINCT
@@ -175,6 +170,10 @@ actor.last_name
 FROM actor
 LEFT JOIN film_actor
 ON actor.actor_id = film_actor.actor_id
+WHERE actor.actor_id NOT IN (
+	SELECT
+    actor_id
+    FROM film_actor)
 ORDER BY actor.last_name;
 
 -- 20.
@@ -230,14 +229,11 @@ ORDER BY last_name;
 
 -- 24.
 SELECT
-title 
+film.title
 FROM film
-WHERE length > 180 AND film_id IN (
-	SELECT
-    film_id
-    FROM film_category 
-    INNER JOIN category ON film_category.category_id = category.category_id
-    WHERE category.name= 'Comedy');
+INNER JOIN film_category ON film.film_id = film_category.film_id
+INNER JOIN category ON film_category.category_id = category.category_id
+WHERE length > 180 AND category.name= 'Comedy';
     
 -- 25.
 SELECT
@@ -254,7 +250,8 @@ FROM (
 	FROM film_actor film_actor1
 	JOIN film_actor film_actor2
 	ON film_actor1.film_id = film_actor2.film_id
-	WHERE film_actor1.actor_id < film_actor2.actor_id -- evito duplicados tipo (1, 2) (2, 1), con <> sale así
+	WHERE film_actor1.actor_id < film_actor2.actor_id -- evito duplicados tipo (1, 2) (2, 1), con <> sí salen
 	GROUP BY film_actor1.actor_id, film_actor2.actor_id) t1
 INNER JOIN actor actor1 ON t1.actor_id1 = actor1.actor_id
 INNER JOIN actor actor2 ON t1.actor_id2 = actor2.actor_id;
+
